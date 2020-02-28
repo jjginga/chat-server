@@ -23,7 +23,7 @@ public class ServerWorker implements Runnable{
 
             String line ="";
 
-            loop:
+
             while (!line.equals("/quit")) {
 
                 try {
@@ -31,10 +31,14 @@ public class ServerWorker implements Runnable{
                     // synchronize this
                     line = inputBufferedReader.readLine();
 
+                    if(line.matches("")){
+                        continue;
+                    }
+
                     if(line.matches("^/.+")){
 
                         command(line);
-                        continue loop;
+                        continue;
                     }
                     server.broadcast(userName+": "+line);
 
@@ -75,14 +79,80 @@ public class ServerWorker implements Runnable{
             case "/list":
                 writeToClient(server.list());
                 break;
-            case "/quit":
-                writeToClient("/quit");
-                server.killSw(this);
-                try {
-                    clientSocket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
+            case "/help":
+                writeToClient(Commands.HELP.listAll());
+                break;
+            case "/kick":
+                if(command.split(" ")[1]==null){
+                    writeToClient(">> Kick yourself!\n"+Commands.KICK.getDescription());
+                    break;
                 }
+                if(!server.isOn(command.split(" ")[1])){
+                    writeToClient(">> User not on!");
+                    break;
+                }
+                server.kick(command.split(" ")[1]);
+                break;
+            case "/whisper":
+                if(command.split(" ")[1]==null){
+                    writeToClient(">> Are you talking to yourself?\n"+Commands.WHISPER.getDescription());
+                    break;
+                }
+
+                if(command.split(" ")[2]==null){
+                    writeToClient(">> Don't you have anything to say?\n"+Commands.WHISPER.getDescription());
+                    break;
+                }
+
+                if(!server.isOn(command.split(" ")[1])){
+                    writeToClient(">> User not on!");
+                    break;
+                }
+
+                server.whisper(command.split(" ")[1], command.substring(command.indexOf(" ", 2)), userName);
+                break;
+            case "/create":
+                if(command.split(" ")[1]==null){
+                    writeToClient(">> Are you talking to yourself?\n"+Commands.CREATE.getDescription());
+                    break;
+                }
+
+                if(server.groupExists(command.split(" ")[1])){
+                    writeToClient(">> Group already exists!");
+                    break;
+                }
+
+                server.createGroup(command.split(" ")[1], this);
+                break;
+            case "/join":
+                if(command.split(" ")[1]==null){
+                    writeToClient(">> Join where?\n"+Commands.JOIN.getDescription());
+                    break;
+                }
+
+                if(!server.groupExists(command.split(" ")[1])){
+                    writeToClient(">> Group doesn't exists!");
+                    break;
+                }
+                server.joinGroup(command.split(" ")[1], this);
+                break;
+            case "/room":
+                if(command.split(" ").length<3){
+                    writeToClient(">> what?\n"+Commands.ROOM.getDescription());
+                    break;
+                }
+
+                if(!server.groupExists(command.split(" ")[1])){
+                    writeToClient(">> Group doesn't exists!");
+                    break;
+                }
+                server.messageGroup(command.split(" ")[1],command.substring(command.indexOf(" ", 2)), this);
+                break;
+            case "/quit":
+                quit();
+                break;
+            default:
+                writeToClient(">> Invalid Command.");
                 break;
 
         }
@@ -91,6 +161,17 @@ public class ServerWorker implements Runnable{
 
     public String getUserName() {
         return userName;
+    }
+
+    void quit(){
+        writeToClient("/quit");
+        server.killSw(this);
+        try {
+            clientSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void close(){
@@ -109,6 +190,45 @@ public class ServerWorker implements Runnable{
             outputBufferedWriter.flush();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+
+    }
+
+    private enum Commands{
+        NAME("/name", "Change username: /name <new_name>"),
+        LIST("/list", "List all users: /list"),
+        QUIT("/quit", "Leave the chat: /leave"),
+        HELP("/help", "List all commands: /help"),
+        KICK("/kick", "Remove user from chat: /kick <username>"),
+        WHISPER("/whisper", "Send private message to user: /whisper <username> <message>"),
+        CREATE("/create", "Creates a group: /create <groupname>"),
+        JOIN("/join", "Join a group: /join <groupname>"),
+        ROOM("/room", "Send Message to a group: /room <groupname> <message>");
+
+        private String name;
+        private String description;
+
+        Commands(String name, String description){
+            this.name=name;
+            this.description=description;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String listAll(){
+            StringBuilder stringBuilder = new StringBuilder();
+
+            for (Commands commands : Commands.values()) {
+                stringBuilder.append(">> "+commands.getName()+": "+commands.getDescription()+"\n");
+            }
+
+            return stringBuilder.toString();
         }
 
     }

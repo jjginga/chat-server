@@ -3,7 +3,7 @@ package org.academiadecodigo.ghostbugsters;
 import java.io.*;
 import java.net.Socket;
 import java.net.UnknownHostException;
-public class Client implements Runnable {
+public class Client {
 
     private Socket socket;
     private BufferedReader systemIn;
@@ -43,19 +43,18 @@ public class Client implements Runnable {
         }
 
 
-        Thread receiveFromServer = new Thread(this);
+        //Thread receiveFromServer = new Thread(this);
         Thread writeToServer = new Thread(new WriteToServer());
 
-        receiveFromServer.start();
+        //receiveFromServer.start();
         writeToServer.start();
+        run();
 
 
 
 
     }
 
-
-    @Override
     public void run() {
 
 
@@ -128,13 +127,12 @@ public class Client implements Runnable {
 
             try {
                 System.out.println("Username: ");
-                clientOut.write("/name "+systemIn.readLine());
+                write("/name "+systemIn.readLine());
+                System.out.println("Type /help for help.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
             while (true) {
-
 
 
                     // read the pretended message from the console
@@ -145,12 +143,7 @@ public class Client implements Runnable {
                     break;
                 }
                 write(line);
-
                     // write the pretended message to the output buffer
-
-
-
-
             }
 
 
