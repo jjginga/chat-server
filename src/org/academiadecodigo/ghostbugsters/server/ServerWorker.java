@@ -73,8 +73,10 @@ public class ServerWorker implements Runnable{
                     writeToClient(">>Please put a name!");
                     break;
                 }
-                Thread.currentThread().setName(command.split(" ")[1]);
-                userName=Thread.currentThread().getName();
+
+                server.rename(this, userName,command.split(" ")[1]);
+                setUserName(command.split(" ")[1]);
+
                 break;
             case "/list":
                 writeToClient(server.list());
@@ -146,7 +148,7 @@ public class ServerWorker implements Runnable{
                     writeToClient(">> Group doesn't exists!");
                     break;
                 }
-                server.messageGroup(command.split(" ")[1],command.substring(command.indexOf(" ", 2)), this);
+                server.messageGroup(command.split(" ")[1],command.substring(command.indexOf(" ", 3)), this);
                 break;
             case "/quit":
                 quit();
@@ -158,14 +160,19 @@ public class ServerWorker implements Runnable{
         }
     }
 
+    public void setUserName(String userName) {
+        this.userName = userName;
+        Thread.currentThread().setName(userName);
+    }
 
-    public String getUserName() {
+    String getUserName() {
         return userName;
     }
 
     void quit(){
         writeToClient("/quit");
         server.killSw(this);
+
         try {
             clientSocket.close();
         } catch (IOException e) {
@@ -183,7 +190,7 @@ public class ServerWorker implements Runnable{
     }
 
 
-    void writeToClient(String message){
+    public void writeToClient(String message){
         try {
             outputBufferedWriter.write(message);
             outputBufferedWriter.newLine();

@@ -3,19 +3,21 @@ package org.academiadecodigo.ghostbugsters.server;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 
 public class Server {
 
 
 
     private ServerSocket serverSocket;
-    private LinkedList<ServerWorker> swList;
-    private HashMap<String, LinkedList<ServerWorker>> groups;
+    private Hashtable<String, ServerWorker> swHashTable;
+    private HashMap<String, List<ServerWorker>> groups;
     private ExecutorService swPool;
+    private int i;
+
 
     public static void main(String[] args) {
         Server server = new Server(8080);
@@ -24,13 +26,13 @@ public class Server {
 
 
     public Server(int port) {
-        swList = new LinkedList<>();
+        swHashTable = new Hashtable<>();
         swPool = Executors.newCachedThreadPool();
         groups = new HashMap<>();
+        i=1;
 
         try {
 
-            // bind the socket to specified port
             System.out.println("Binding to port " + port);
             serverSocket = new ServerSocket(port);
 
@@ -57,98 +59,138 @@ public class Server {
 
     private void listen(){
 
-        // block waiting for a client to connect
 
         /**this has to be synchronized**/
         Socket clientSocket = null;
 
         try {
+
             clientSocket = serverSocket.accept();
-            swList.add(new ServerWorker(clientSocket,this));
-            swPool.submit(swList.peekLast());
+
+            synchronized (swHashTable) {
+                swHashTable.put("user" + i, new ServerWorker(clientSocket, this));
+                swPool.submit(swHashTable.get("user" + i));
+                swHashTable.get("user" + i).setUserName("user" + i);
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
         }
 
+        i++;
     }
 
     void broadcast(String message){
 
 
-
-        for (ServerWorker serverWorker : swList) {
-            serverWorker.writeToClient(message);
+        synchronized (swHashTable) {
+            for (String key : swHashTable.keySet()) {
+                swHashTable.get(key).writeToClient(message);
+            }
         }
 
 
     }
 
-    String list(){
+    public String list(){
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("[ ");
-        for (ServerWorker serverWorker : swList) {
-            stringBuilder.append(serverWorker.getUserName()+" ");
+        stringBuilder.append("[");
+
+        synchronized (swHashTable) {
+            for (String key : swHashTable.keySet()) {
+                stringBuilder.append(swHashTable.get(key).getUserName() + "; ");
+            }
         }
-        stringBuilder.append(" ]");
+
+        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf("; "));
+        stringBuilder.append("]");
 
         return stringBuilder.toString();
     }
 
     boolean isOn(String name){
-        for (ServerWorker serverWorker : swList) {
-            if(serverWorker.getUserName().equals(name)){
-                return true;
-            }
+
+        if(swHashTable.containsKey(name)){
+            return true;
         }
 
         return false;
     }
 
-    void kick(String name){
-        for (ServerWorker serverWorker : swList) {
-            if(serverWorker.getUserName().equals(name)){
-                serverWorker.quit();
-            }
+    public ServerWorker getServerWorker(String name){
+
+        return swHashTable.get(name);
+    }
+
+    public Hashtable<String, ServerWorker> getSwHashTable() {
+        return swHashTable;
+    }
+
+    public void kick(String name){
+
+        if(isOn(name)){
+            getServerWorker(name).quit();
+        }
+
+    }
+
+    public void whisper(String name, String message, String sender){
+
+        if(isOn(name)){
+            getServerWorker(name).writeToClient(sender+" whispers:"+message);
         }
     }
 
-    void whisper(String name, String message, String sender){
-        for (ServerWorker serverWorker : swList) {
-            if(serverWorker.getUserName().equals(name)){
-                serverWorker.writeToClient(sender+" whispers:"+message);
-            }
-        }
+    boolean groupExists(String groupName){
+
+        return groups.containsKey(groupName);
     }
 
-    boolean groupExists(String name){
-        for (String s : groups.keySet()) {
-           if(s.equals(name)){
-               return true;
-           }
+    public void createGroup(String groupName, ServerWorker serverWorker){
+
+        if(groupExists(groupName)){
+            return;
         }
 
-        return false;
-    }
-
-    void createGroup(String groupName, ServerWorker serverWorker){
-        groups.put(groupName, new LinkedList<ServerWorker>());
+        groups.put(groupName, Collections.synchronizedList(new LinkedList<ServerWorker>()));
         groups.get(groupName).add(serverWorker);
     }
 
-    void joinGroup(String groupName, ServerWorker serverWorker){
+    public void joinGroup(String groupName, ServerWorker serverWorker){
+
         groups.get(groupName).add(serverWorker);
+
     }
 
     void messageGroup(String groupName, String message, ServerWorker serverWorker){
-        for (ServerWorker worker : groups.get(groupName)) {
-            worker.writeToClient(serverWorker.getUserName()+": "+message);
+
+        synchronized (groups.get(groupName)) {
+
+            for (ServerWorker worker : groups.get(groupName)) {
+                worker.writeToClient(">>" + groupName + "<< " + serverWorker.getUserName() + ": " + message);
+            }
+
         }
+
 
     }
 
     void killSw(ServerWorker serverWorker){
-        swList.remove(serverWorker);
+
+        swHashTable.remove(serverWorker);
+
     }
+
+    public void rename(ServerWorker serverWorker, String oldName, String newName){
+
+        synchronized (swHashTable) {
+            swHashTable.put(newName, serverWorker);
+            swHashTable.remove(oldName);
+        }
+
+    }
+
+
 
     private void close(){
         try {

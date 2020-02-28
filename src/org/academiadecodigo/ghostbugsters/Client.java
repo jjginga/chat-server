@@ -13,7 +13,7 @@ public class Client {
     public static void main(String[] args) {
 
         Client client = new Client("127.0.0.1",8080);
-        client.run();
+        client.receiveFromServer();
     }
 
 
@@ -46,21 +46,21 @@ public class Client {
         //Thread receiveFromServer = new Thread(this);
         Thread writeToServer = new Thread(new WriteToServer());
 
-        //receiveFromServer.start();
+        //receiveFromServer.receiveFromServer();
         writeToServer.start();
-        run();
+        receiveFromServer();
 
 
 
 
     }
 
-    public void run() {
+    public void receiveFromServer() {
 
 
         String inMessage = "";
 
-        // while the client doesn't signal to quit
+        // message quit is sent back from server.
         while (!inMessage.equals("/quit")) {
 
             try {
@@ -78,12 +78,13 @@ public class Client {
             } catch (IOException ex) {
 
                 System.out.println("Sending error: " + ex.getMessage() + ", closing client...");
+                System.exit(2);
                 break;
 
             }
 
         }
-
+        System.exit(1);
         stop();
     }
 
@@ -125,6 +126,7 @@ public class Client {
 
             String line ="";
 
+            //when client starts asks for nickname
             try {
                 System.out.println("Username: ");
                 write("/name "+systemIn.readLine());
@@ -135,15 +137,16 @@ public class Client {
             while (true) {
 
 
-                    // read the pretended message from the console
+                // read the pretended message from the console
                 try {
                     line = systemIn.readLine();
                 } catch (IOException e) {
                     e.printStackTrace();
                     break;
                 }
+                // write the pretended message to the output buffer
                 write(line);
-                    // write the pretended message to the output buffer
+
             }
 
 
