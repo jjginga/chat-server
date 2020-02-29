@@ -3,6 +3,9 @@ package org.academiadecodigo.ghostbugsters.server.commands;
 import org.academiadecodigo.ghostbugsters.server.Server;
 
 public class Alias implements Commands{
+
+
+
     @Override
     public String name() {
         return "/alias";
