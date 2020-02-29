@@ -66,6 +66,8 @@ public class Client {
             try {
 
                 // read the pretended message from the stream;
+
+
                 inMessage = clientIn.readLine();
 
                 if(inMessage.equals("/quit")){
@@ -129,7 +131,7 @@ public class Client {
             //when client starts asks for nickname
             try {
                 System.out.println("Username: ");
-                write("/name "+systemIn.readLine());
+                write("/alias "+systemIn.readLine());
                 System.out.println("Type /help for help.");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -148,6 +150,8 @@ public class Client {
                 write(line);
 
             }
+
+
 
 
             // close the client socket and buffers

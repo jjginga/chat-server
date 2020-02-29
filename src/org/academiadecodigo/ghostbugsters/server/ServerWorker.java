@@ -14,7 +14,7 @@ public class ServerWorker implements Runnable{
     public ServerWorker(Socket clientSocket, Server server){
         this.clientSocket=clientSocket;
         this.server=server;
-        setupSocketStreams();
+       setupSocketStreams();
 
     }
 
@@ -35,12 +35,7 @@ public class ServerWorker implements Runnable{
                         continue;
                     }
 
-                    if(line.matches("^/.+")){
-
-                        command(line);
-                        continue;
-                    }
-                    server.broadcast(userName+": "+line);
+                    server.broadcast(line, userName);
 
 
                 } catch (IOException ex) {
@@ -63,100 +58,6 @@ public class ServerWorker implements Runnable{
             outputBufferedWriter=new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()));
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private void command(String command){
-        switch (command.split(" ")[0]) {
-            case "/name":
-                if(!(command.split(" ").length>1)){
-                    writeToClient(">>Please put a name!");
-                    break;
-                }
-
-                server.rename(this, userName,command.split(" ")[1]);
-                setUserName(command.split(" ")[1]);
-
-                break;
-            case "/list":
-                writeToClient(server.list());
-                break;
-            case "/help":
-                writeToClient(Commands.HELP.listAll());
-                break;
-            case "/kick":
-                if(command.split(" ")[1]==null){
-                    writeToClient(">> Kick yourself!\n"+Commands.KICK.getDescription());
-                    break;
-                }
-                if(!server.isOn(command.split(" ")[1])){
-                    writeToClient(">> User not on!");
-                    break;
-                }
-                server.kick(command.split(" ")[1]);
-                break;
-            case "/whisper":
-                if(command.split(" ")[1]==null){
-                    writeToClient(">> Are you talking to yourself?\n"+Commands.WHISPER.getDescription());
-                    break;
-                }
-
-                if(command.split(" ")[2]==null){
-                    writeToClient(">> Don't you have anything to say?\n"+Commands.WHISPER.getDescription());
-                    break;
-                }
-
-                if(!server.isOn(command.split(" ")[1])){
-                    writeToClient(">> User not on!");
-                    break;
-                }
-
-                server.whisper(command.split(" ")[1], command.substring(command.indexOf(" ", 2)), userName);
-                break;
-            case "/create":
-                if(command.split(" ")[1]==null){
-                    writeToClient(">> Are you talking to yourself?\n"+Commands.CREATE.getDescription());
-                    break;
-                }
-
-                if(server.groupExists(command.split(" ")[1])){
-                    writeToClient(">> Group already exists!");
-                    break;
-                }
-
-                server.createGroup(command.split(" ")[1], this);
-                break;
-            case "/join":
-                if(command.split(" ")[1]==null){
-                    writeToClient(">> Join where?\n"+Commands.JOIN.getDescription());
-                    break;
-                }
-
-                if(!server.groupExists(command.split(" ")[1])){
-                    writeToClient(">> Group doesn't exists!");
-                    break;
-                }
-                server.joinGroup(command.split(" ")[1], this);
-                break;
-            case "/room":
-                if(command.split(" ").length<3){
-                    writeToClient(">> what?\n"+Commands.ROOM.getDescription());
-                    break;
-                }
-
-                if(!server.groupExists(command.split(" ")[1])){
-                    writeToClient(">> Group doesn't exists!");
-                    break;
-                }
-                server.messageGroup(command.split(" ")[1],command.substring(command.indexOf(" ", 3)), this);
-                break;
-            case "/quit":
-                quit();
-                break;
-            default:
-                writeToClient(">> Invalid Command.");
-                break;
-
         }
     }
 
@@ -201,44 +102,68 @@ public class ServerWorker implements Runnable{
 
     }
 
-    private enum Commands{
-        NAME("/name", "Change username: /name <new_name>"),
-        LIST("/list", "List all users: /list"),
-        QUIT("/quit", "Leave the chat: /leave"),
-        HELP("/help", "List all commands: /help"),
-        KICK("/kick", "Remove user from chat: /kick <username>"),
-        WHISPER("/whisper", "Send private message to user: /whisper <username> <message>"),
-        CREATE("/create", "Creates a group: /create <groupname>"),
-        JOIN("/join", "Join a group: /join <groupname>"),
-        ROOM("/room", "Send Message to a group: /room <groupname> <message>");
-
-        private String name;
-        private String description;
-
-        Commands(String name, String description){
-            this.name=name;
-            this.description=description;
+    DataOutputStream getDataOutputStream(){
+        try {
+            return new DataOutputStream(clientSocket.getOutputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        public String getName() {
-            return name;
+        return null;
+    }
+
+    DataInputStream getDataInputStream(){
+
+        try {
+            return new DataInputStream(clientSocket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        public String getDescription() {
-            return description;
-        }
+        return null;
+    }
 
-        public String listAll(){
-            StringBuilder stringBuilder = new StringBuilder();
+    void sendFile(DataOutputStream out, File file){
 
-            for (Commands commands : Commands.values()) {
-                stringBuilder.append(">> "+commands.getName()+": "+commands.getDescription()+"\n");
+        byte[] buffer = new byte[1024];
+        int num;
+        FileInputStream fStream=null;
+
+        try {
+            fStream = new FileInputStream(file);
+            while((num=fStream.read(buffer))!=-1){
+                out.write(buffer, 0,num);
             }
-
-            return stringBuilder.toString();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+
+        try {
+            fStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
 
     }
 
+    void receiveFile(DataInputStream in){
+        byte[] buffer = new byte[1024];
+        int num;
+        FileOutputStream fStream=null;
+
+        String path="/Users/codecadet/joel/workspace/homework/multiclientserver/resources";
+        try {
+            fStream = new FileOutputStream(path);
+            while ((num = in.read(buffer))!=-1){
+                fStream.write(buffer, 0, num);
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
+    }
 
 }
