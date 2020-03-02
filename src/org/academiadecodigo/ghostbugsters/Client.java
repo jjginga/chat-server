@@ -68,8 +68,9 @@ public class Client {
                 }
 
                 if(inMessage.equals("/file receive")){
-                   receiveFile();
-                   continue;
+                    String fileName = clientIn.readLine();
+                    receiveFile(fileName);
+                    continue;
                 }
 
                 if(inMessage.equals("/file send")){
@@ -175,7 +176,7 @@ public class Client {
         }
     }
 
-    private void receiveFile(){
+    private void receiveFile(String fileName){
 
         DataInputStream in = null;
         FileOutputStream fStream=null;
@@ -185,7 +186,7 @@ public class Client {
 
         try {
             in = new DataInputStream(socket.getInputStream());
-            fStream = new FileOutputStream("resources/user");
+            fStream = new FileOutputStream("resources/teste/"+fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -193,18 +194,21 @@ public class Client {
 
         try {
 
-            while ((num = in.read(buffer))==buffer.length){
+            while ((num = in.read(buffer))!=-1){
+
                 fStream.write(buffer, 0, num);
+
+                if (num!=buffer.length){
+                    break;
+                }
             }
 
-            fStream.write(buffer, 0, num);
 
         } catch (IOException e){
             e.printStackTrace();
         } finally {
             try {
                 fStream.close();
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -215,7 +219,7 @@ public class Client {
 
     }
 
-    private void sendFile(String path) throws IOException {
+    private void sendFile(String path) {
 
         byte[] buffer = new byte[1024];
         int num;

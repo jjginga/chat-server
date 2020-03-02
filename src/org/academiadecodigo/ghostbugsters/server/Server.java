@@ -4,7 +4,6 @@ import org.academiadecodigo.ghostbugsters.server.commands.*;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -180,22 +179,24 @@ public class Server {
         DataOutputStream outputStream = swHashTable.get(recipientName).getDataOutputStream();
         DataInputStream inputStream = swHashTable.get(senderName).getDataInputStream();
 
-        swHashTable.get(recipientName).receiveFile();
+        swHashTable.get(recipientName).receiveFile(path.split("/")[path.split("/").length-1]);
         swHashTable.get(senderName).sendFile(path);
 
         byte[] buffer = new byte[1024];
         int num=0;
 
         try {
-            while ((num = inputStream.read(buffer)) == buffer.length) {
-                System.out.println(num);
+            while ((num = inputStream.read(buffer)) == -1) {
                 outputStream.write(buffer, 0, num);
+                if (num != buffer.length){
+                    break;
+                }
             }
 
-            outputStream.write(buffer, 0, num);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
 
 
     }

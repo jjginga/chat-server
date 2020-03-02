@@ -113,14 +113,6 @@ public class ServerWorker implements Runnable{
         return null;
     }
 
-    void resetBufferedWriter(){
-        try {
-            inputBufferedReader.reset();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     DataOutputStream getDataOutputStream(){
 
         try {
@@ -139,9 +131,10 @@ public class ServerWorker implements Runnable{
         writeToClient(path);
     }
 
-    void receiveFile(){
+    void receiveFile(String fileName){
 
         writeToClient("/file receive");
+        writeToClient(fileName);
 
     }
 
