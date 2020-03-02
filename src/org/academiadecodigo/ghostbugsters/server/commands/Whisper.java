@@ -16,9 +16,21 @@ public class Whisper implements Commands{
     @Override
     public void implementation(Server server, String userName, String command) {
 
-        String userToWhisperTo = command.split(" ")[1];
-        String message = command.substring(command.indexOf(" ", 2));
+        if(command.split(" ").length<=2){
+            server.getServerWorker(userName).writeToClient("/invalid");
+            server.getServerWorker(userName).writeToClient(">>"+description());
+            return;
+        }
 
+        String userToWhisperTo = command.split(" ")[1];
+
+        if(!server.isOn(userToWhisperTo)){
+            server.getServerWorker(userName).writeToClient("/invalid");
+            server.getServerWorker(userName).writeToClient(">>user doesn't exist.");
+            return;
+        }
+
+        String message = command.substring(command.indexOf(" ", 2));
 
         server.whisper(userToWhisperTo, message,  userName);
 

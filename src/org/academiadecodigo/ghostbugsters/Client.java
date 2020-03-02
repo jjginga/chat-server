@@ -43,16 +43,10 @@ public class Client {
         }
 
 
-        //Thread receiveFromServer = new Thread(this);
         Thread writeToServer = new Thread(new WriteToServer());
 
-        //receiveFromServer.receiveFromServer();
         writeToServer.start();
         receiveFromServer();
-
-
-
-
     }
 
     public void receiveFromServer() {
@@ -65,16 +59,30 @@ public class Client {
 
             try {
 
-                // read the pretended message from the stream;
-
-
+                // read the message from the stream;
                 inMessage = clientIn.readLine();
+
+                if (inMessage.equals("/invalid")){
+                    System.out.println(clientIn.readLine());
+                    continue;
+                }
+
+                if(inMessage.equals("/file receive")){
+                   receiveFile();
+                   continue;
+                }
+
+                if(inMessage.equals("/file send")){
+                    String path = clientIn.readLine();
+                    sendFile(path);
+                    continue;
+                }
 
                 if(inMessage.equals("/quit")){
                     break;
                 }
 
-                // write the pretended message to the console
+                // write the message to the console
                 System.out.println(inMessage);
 
             } catch (IOException ex) {
@@ -95,7 +103,6 @@ public class Client {
 
         clientIn = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         clientOut = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-
     }
 
     public void setupSystemIn(){
@@ -122,23 +129,14 @@ public class Client {
 
     private class WriteToServer implements Runnable{
 
-
         @Override
         public void run() {
 
             String line ="";
 
             //when client starts asks for nickname
-            try {
-                System.out.println("Username: ");
-                write("/alias "+systemIn.readLine());
-                System.out.println("Type /help for help.");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            setUsername();
             while (true) {
-
-
                 // read the pretended message from the console
                 try {
                     line = systemIn.readLine();
@@ -148,28 +146,104 @@ public class Client {
                 }
                 // write the pretended message to the output buffer
                 write(line);
-
             }
-
-
-
 
             // close the client socket and buffers
             stop();
         }
 
-        void write(String message){
-            try {
-                clientOut.write(message);
-                clientOut.newLine();
-                clientOut.flush();
-            } catch (IOException ex) {
+    }
 
-                System.out.println("Sending error: " + ex.getMessage());
-            }
+    void write(String message){
+        try {
+            clientOut.write(message);
+            clientOut.newLine();
+            clientOut.flush();
+        } catch (IOException ex) {
+
+            System.out.println("Sending error: " + ex.getMessage());
         }
+    }
+
+    private void setUsername(){
+        try {
+            System.out.println("Username: ");
+            write("/alias "+systemIn.readLine());
+            System.out.println("Type /help for help.");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void receiveFile(){
+
+        DataInputStream in = null;
+        FileOutputStream fStream=null;
+
+        byte[] buffer = new byte[1024];
+        int num;
+
+        try {
+            in = new DataInputStream(socket.getInputStream());
+            fStream = new FileOutputStream("resources/user");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+
+            while ((num = in.read(buffer))==buffer.length){
+                fStream.write(buffer, 0, num);
+            }
+
+            fStream.write(buffer, 0, num);
+
+        } catch (IOException e){
+            e.printStackTrace();
+        } finally {
+            try {
+                fStream.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+        System.out.println("- Ficheiro Recebido.");
 
     }
 
+    private void sendFile(String path) throws IOException {
+
+        byte[] buffer = new byte[1024];
+        int num;
+        FileInputStream fStream=null;
+        DataOutputStream out = null;
+
+        try {
+            out = new DataOutputStream(socket.getOutputStream());
+            fStream = new FileInputStream(new File(path));
+
+            while((num=fStream.read(buffer))!=-1){
+                out.write(buffer, 0,num);
+            }
+
+            out.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            fStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        System.out.println("- Ficheiro enviado");
+
+    }
 
 }

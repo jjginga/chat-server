@@ -102,18 +102,8 @@ public class ServerWorker implements Runnable{
 
     }
 
-    DataOutputStream getDataOutputStream(){
-        try {
-            return new DataOutputStream(clientSocket.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
 
     DataInputStream getDataInputStream(){
-
         try {
             return new DataInputStream(clientSocket.getInputStream());
         } catch (IOException e) {
@@ -123,47 +113,36 @@ public class ServerWorker implements Runnable{
         return null;
     }
 
-    void sendFile(DataOutputStream out, File file){
+    void resetBufferedWriter(){
+        try {
+            inputBufferedReader.reset();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-        byte[] buffer = new byte[1024];
-        int num;
-        FileInputStream fStream=null;
+    DataOutputStream getDataOutputStream(){
 
         try {
-            fStream = new FileInputStream(file);
-            while((num=fStream.read(buffer))!=-1){
-                out.write(buffer, 0,num);
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            return new DataOutputStream(clientSocket.getOutputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-
-        try {
-            fStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+        return null;
 
     }
 
-    void receiveFile(DataInputStream in){
-        byte[] buffer = new byte[1024];
-        int num;
-        FileOutputStream fStream=null;
+    void sendFile(String path){
 
-        String path="/Users/codecadet/joel/workspace/homework/multiclientserver/resources";
-        try {
-            fStream = new FileOutputStream(path);
-            while ((num = in.read(buffer))!=-1){
-                fStream.write(buffer, 0, num);
-            }
-        } catch (IOException e){
-            e.printStackTrace();
-        }
+        writeToClient("/file send");
+        writeToClient(path);
+    }
+
+    void receiveFile(){
+
+        writeToClient("/file receive");
+
     }
 
 }

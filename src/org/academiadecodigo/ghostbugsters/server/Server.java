@@ -32,6 +32,7 @@ public class Server {
     }
 
 
+    //Constructor
     public Server(int port) {
 
         swHashTable = new Hashtable<>();
@@ -53,7 +54,6 @@ public class Server {
 
             }
 
-
         } catch (IOException ioe) {
 
             System.out.println(ioe.getMessage());
@@ -66,6 +66,7 @@ public class Server {
 
     }
 
+    //Strategy Design patern
     private void commandsInit(){
         commands = new HashMap<>();
         commands.put("/alias", new Alias());
@@ -79,8 +80,8 @@ public class Server {
         commands.put("/file", new org.academiadecodigo.ghostbugsters.server.commands.File());
     }
 
+    //Wait for new connections
     private void listen(){
-
 
         /**this has to be synchronized**/
         Socket clientSocket = null;
@@ -105,8 +106,10 @@ public class Server {
         i++;
     }
 
+    //Writes to all users
     void broadcast(String message, String userName){
-        System.out.println(message);
+
+        System.out.println(userName+" :"+message);
 
         if(message.matches("^/.+")){
 
@@ -130,6 +133,16 @@ public class Server {
             commands.get(message.split(" ")[0]).implementation(this, userName, message);
     }
 
+    //Basic Commands auxiliary methods
+    public void rename(ServerWorker serverWorker, String oldName, String newName){
+
+        synchronized (swHashTable) {
+            swHashTable.put(newName, serverWorker);
+            swHashTable.remove(oldName);
+        }
+
+    }
+
     public String list(){
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("[");
@@ -144,24 +157,6 @@ public class Server {
         stringBuilder.append("]");
 
         return stringBuilder.toString();
-    }
-
-    boolean isOn(String name){
-
-        if(swHashTable.containsKey(name)){
-            return true;
-        }
-
-        return false;
-    }
-
-    public ServerWorker getServerWorker(String name){
-
-        return swHashTable.get(name);
-    }
-
-    public Hashtable<String, ServerWorker> getSwHashTable() {
-        return swHashTable;
     }
 
     public void kick(String name){
@@ -182,16 +177,22 @@ public class Server {
     public void sendFile(String senderName, String recipientName, String path){
 
 
-        DataOutputStream out = swHashTable.get(senderName).getDataOutputStream();
-        DataInputStream in = swHashTable.get(recipientName).getDataInputStream();
+        DataOutputStream outputStream = swHashTable.get(recipientName).getDataOutputStream();
+        DataInputStream inputStream = swHashTable.get(senderName).getDataInputStream();
 
+        swHashTable.get(recipientName).receiveFile();
+        swHashTable.get(senderName).sendFile(path);
 
-        swHashTable.get(senderName).sendFile(out, new File(path));
-        swHashTable.get(recipientName).receiveFile(in);
+        byte[] buffer = new byte[1024];
+        int num=0;
 
         try {
-            in.close();
-            out.close();
+            while ((num = inputStream.read(buffer)) == buffer.length) {
+                System.out.println(num);
+                outputStream.write(buffer, 0, num);
+            }
+
+            outputStream.write(buffer, 0, num);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -199,10 +200,6 @@ public class Server {
 
     }
 
-    boolean groupExists(String groupName){
-
-        return groups.containsKey(groupName);
-    }
 
     public void createGroup(String groupName, ServerWorker serverWorker){
 
@@ -233,22 +230,42 @@ public class Server {
 
     }
 
+
+    //Verification methods
+    public boolean isOn(String name){
+
+        if(swHashTable.containsKey(name)){
+            return true;
+        }
+
+        return false;
+    }
+
+    public boolean groupExists(String groupName){
+
+        return groups.containsKey(groupName);
+    }
+
+    //Other Auxiliary Methods
+    public ServerWorker getServerWorker(String name){
+
+        return swHashTable.get(name);
+    }
+
+    public Hashtable<String, ServerWorker> getSwHashTable() {
+        return swHashTable;
+    }
+
+    public List getGroup(String groupName){
+
+        return groups.get(groupName);
+    }
+
     void killSw(ServerWorker serverWorker){
 
         swHashTable.remove(serverWorker);
 
     }
-
-    public void rename(ServerWorker serverWorker, String oldName, String newName){
-
-        synchronized (swHashTable) {
-            swHashTable.put(newName, serverWorker);
-            swHashTable.remove(oldName);
-        }
-
-    }
-
-
 
     private void close(){
         try {

@@ -19,11 +19,24 @@ public class Alias implements Commands{
     @Override
     public void implementation(Server server, String userName, String command) {
 
-        String new_name=command.split(" ")[1];
-
         synchronized (server.getSwHashTable()) {
-            server.getServerWorker(userName).setUserName(new_name);
-            server.rename(server.getServerWorker(userName), userName, command.split(" ")[1]);
+
+            if (command.split(" ").length<=1){
+                server.getServerWorker(userName).writeToClient("/invalid");
+                server.getServerWorker(userName).writeToClient(">>invalid. " + description());
+                return;
+            }
+
+            String new_name=command.split(" ")[1];
+
+            if(server.isOn(new_name)){
+                server.getServerWorker(userName).writeToClient("/invalid");
+                server.getServerWorker(userName).writeToClient(">>name already taken.");
+                return;
+            }
+
+                server.getServerWorker(userName).setUserName(new_name);
+                server.rename(server.getServerWorker(userName), userName, command.split(" ")[1]);
         }
     }
 }
