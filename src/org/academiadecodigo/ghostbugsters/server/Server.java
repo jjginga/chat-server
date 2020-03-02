@@ -89,14 +89,13 @@ public class Server {
 
             clientSocket = serverSocket.accept();
 
-            synchronized (swHashTable) {
+
 
                 swHashTable.put("user" + i, new ServerWorker(clientSocket, this));
 
                 swPool.submit(swHashTable.get("user" + i));
 
                 swHashTable.get("user" + i).setUserName("user" + i);
-            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -152,7 +151,7 @@ public class Server {
             }
         }
 
-        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf("; "));
+        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(" ; "));
         stringBuilder.append("]");
 
         return stringBuilder.toString();
