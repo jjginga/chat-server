@@ -9,11 +9,11 @@ The commands where implemented using a strategy design pattern.
 Java
 
 [supported commands]
-Change username: /alias <new_name>
-Create a group: /create <groupname>
-Send file to user /file <user_name> <file_path>
-Join a group: /join <groupname>
-Remove user from chat: /kick <username>
-List all users: /list
-Send Message to a group: /room <groupname> <message>
-Send a private message to a user: /whisper <user_name> <message>
+Change username: /alias <new_name>;
+Create a group: /create <groupname>;
+Send file to user /file <user_name> <file_path>;
+Join a group: /join <groupname>;
+Remove user from chat: /kick <username>;
+List all users: /list;
+Send Message to a group: /room <groupname> <message>;
+Send a private message to a user: /whisper <user_name> <message>;
