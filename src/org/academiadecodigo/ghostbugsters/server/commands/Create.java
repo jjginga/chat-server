@@ -33,6 +33,8 @@ public class Create implements Commands{
         }
 
         server.createGroup( groupName, server.getServerWorker(userName));
+        server.getServerWorker(userName).writeToClient("Group created: "+groupName);
+
 
     }
 }

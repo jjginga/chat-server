@@ -25,13 +25,13 @@ public class Room implements Commands{
 
         String groupName = command.split(" ")[1];
 
-        if(server.groupExists(groupName)){
+        if(!server.groupExists(groupName)){
             server.getServerWorker(userName).writeToClient("/invalid");
             server.getServerWorker(userName).writeToClient(">>group doesn't exist.");
             return;
         }
 
-        if(!server.getGroup(groupName).contains(userName)){
+        if(!server.getGroup(groupName).contains(server.getServerWorker(userName))){
             server.getServerWorker(userName).writeToClient("/invalid");
             server.getServerWorker(userName).writeToClient(">>user is not on the group!");
             return;

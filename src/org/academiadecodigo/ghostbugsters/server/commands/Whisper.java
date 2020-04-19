@@ -10,7 +10,7 @@ public class Whisper implements Commands{
 
     @Override
     public String description() {
-        return null;
+        return "Send a private message to a user: /whisper <user_name> <message>";
     }
 
     @Override

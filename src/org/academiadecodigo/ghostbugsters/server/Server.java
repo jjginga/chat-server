@@ -26,7 +26,7 @@ public class Server {
 
 
     public static void main(String[] args) {
-        Server server = new Server(8080);
+        Server server = new Server(8087);
 
     }
 
@@ -82,7 +82,6 @@ public class Server {
     //Wait for new connections
     private void listen(){
 
-        /**this has to be synchronized**/
         Socket clientSocket = null;
 
         try {
@@ -107,10 +106,7 @@ public class Server {
     //Writes to all users
     void broadcast(String message, String userName){
 
-        System.out.println(userName+" :"+message);
-
         if(message.matches("^/.+")){
-
             command(message, userName);
             return;
         }
@@ -145,14 +141,17 @@ public class Server {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("[");
 
+
         synchronized (swHashTable) {
             for (String key : swHashTable.keySet()) {
                 stringBuilder.append(swHashTable.get(key).getUserName() + "; ");
             }
         }
 
-        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(" ; "));
+        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf("; "));
+        stringBuilder.deleteCharAt(stringBuilder.lastIndexOf(" "));
         stringBuilder.append("]");
+
 
         return stringBuilder.toString();
     }
@@ -207,7 +206,8 @@ public class Server {
             return;
         }
 
-        groups.put(groupName, Collections.synchronizedList(new LinkedList<ServerWorker>()));
+        groups.put(groupName, Collections.synchronizedList(new LinkedList<>()));
+
         groups.get(groupName).add(serverWorker);
     }
 

@@ -13,7 +13,7 @@ public class Alias implements Commands{
 
     @Override
     public String description() {
-        return "Change username: /name <new_name>";
+        return "Change username: /alias <new_name>";
     }
 
     @Override
